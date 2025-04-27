@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Game</title>
+    <style>
+        body {
+            text-align: center;
+            overflow: hidden;
+            margin: 0;
+            background-color: black;
+        }
+        #game-area {
+            width: 90vw;
+            height: 80vh;
+            background: url('road.jpg') no-repeat center/cover;
+            position: relative;
+            margin: auto;
+            border: 2px solid white;
+            overflow: hidden;
+        }
+        #car {
+            width: 60px;
+            height: 60px;
+            position: absolute;
+            bottom: 20px;
+            left: calc(50% - 30px);
+            font-size: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .obstacle {
+            width: 60px;
+            height: 60px;
+            position: absolute;
+            top: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .btn {
+            width: 60px;
+            height: 60px;
+            background-color: white;
+            border-radius: 50%;
+            margin: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            user-select: none;
+        }
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: white;
+            background: black;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+            color: white;
+            background: black;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-area">
+        <div id="car">🚗</div>
+        <div id="game-over">Game Over!</div>
+        <div id="score">Score: 0</div>
+    </div>
+
+    <div class="controls">
+        <div class="btn" ontouchstart="startMove(-5)" ontouchend="stopMove()" onmousedown="startMove(-5)" onmouseup="stopMove()">⬅️</div>
+        <div class="btn" ontouchstart="startMove(5)" ontouchend="stopMove()" onmousedown="startMove(5)" onmouseup="stopMove()">➡️</div>
+    </div>
+
+    <script>
+        let gameOver = false;
+        let score = 0;
+        let obstacles = [];
+        let carSpeed = 0;
+
+        function startMove(speed) {
+            carSpeed = speed;
+        }
+
+        function stopMove() {
+            carSpeed = 0;
+        }
+
+        function updateCar() {
+            if (gameOver) return;
+
+            let car = document.getElementById("car");
+            let left = car.offsetLeft;
+            let gameArea = document.getElementById("game-area").offsetWidth;
+
+            if ((carSpeed < 0 && left > 10) || (carSpeed > 0 && left + car.offsetWidth < gameArea - 10)) {
+                car.style.left = left + carSpeed + "px";
+            }
+
+            requestAnimationFrame(updateCar);
+        }
+
+        function createObstacle() {
+            if (gameOver) return;
+
+            let gameArea = document.getElementById("game-area");
+            let obstacle = document.createElement("div");
+            obstacle.className = "obstacle";
+            obstacle.innerHTML = "🚗"; // Obstacles now match the car size!
+            obstacle.style.left = Math.random() * (gameArea.offsetWidth - 60) + "px";
+            gameArea.appendChild(obstacle);
+
+            obstacles.push({ element: obstacle, speed: 5 });
+        }
+
+        function updateGame() {
+            if (gameOver) return;
+
+            let car = document.getElementById("car");
+            let carRect = car.getBoundingClientRect();
+
+            obstacles.forEach((obstacleData, index) => {
+                let obstacle = obstacleData.element;
+                let obstacleRect = obstacle.getBoundingClientRect();
+                
+                obstacle.style.top = (obstacle.offsetTop + obstacleData.speed) + "px";
+
+                if (
+                    obstacleRect.bottom >= carRect.top &&
+                    obstacleRect.top <= carRect.bottom &&
+                    obstacleRect.left + obstacleRect.width >= carRect.left &&
+                    obstacleRect.left <= carRect.left + carRect.width
+                ) {
+                    document.getElementById("game-over").style.display = "block";
+                    gameOver = true;
+                    return;
+                }
+
+                if (obstacle.offsetTop > document.getElementById("game-area").offsetHeight) {
+                    document.getElementById("game-area").removeChild(obstacle);
+                    obstacles.splice(index, 1);
+                    updateScore();
+                }
+            });
+
+            requestAnimationFrame(updateGame);
+        }
+
+        function updateScore() {
+            if (!gameOver) {
+                score++;
+                document.getElementById("score").textContent = "Score: " + score;
+            }
+        }
+
+        setInterval(createObstacle, 2000);
+        requestAnimationFrame(updateGame);
+        requestAnimationFrame(updateCar);
+    </script>
+</body>
+</html>
